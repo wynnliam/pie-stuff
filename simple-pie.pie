@@ -1,0 +1,18 @@
+#lang pie
+
+'spinach
+
+(the (Pair Atom Atom)
+  (cons 'spinach 'cauliflower))
+
+(the (Pair Atom (Pair Atom Atom))
+  (cons 'spinach (cons 'kale 'cauliflower)))
+
+(car
+  (the (Pair Atom Nat)
+    (cons 'brussels-sprouts 4)))
+
+U
+
+(Pair U U)
+(-> U U)
