@@ -1,0 +1,24 @@
+#lang pie
+
+;; Determines if a given Nat is zero or not. We could use which-Nat, but
+;; for learning purposes, we use rec-Nat.
+
+(claim step-zerop
+  (-> Nat Atom
+      Atom))
+
+(define step-zerop
+  (lambda (n-1 zeropn-1)
+    'nil))
+
+(claim zerop
+  (-> Nat
+      Atom))
+
+(define zerop
+  (lambda (n)
+    (rec-Nat n
+      't
+      step-zerop)))
+
+(zerop 3)
