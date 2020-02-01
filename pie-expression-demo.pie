@@ -1,0 +1,85 @@
+#lang pie
+
+(claim flip
+  (Pi ((A U)
+       (D U))
+    (-> (Pair A D)
+        (Pair D A))))
+
+(define flip
+  (lambda (A D)
+    (lambda (p)
+      (cons (cdr p) (car p)))))
+
+((flip Nat Atom) (cons 3 'A))
+
+(claim elim-Pair
+  (Pi ((A U)
+       (D U)
+       (X U))
+    (-> (Pair A D)
+        (-> A D
+            X)
+        X)))
+
+(define elim-Pair
+  (lambda (A D X)
+    (lambda (p f)
+      (f (car p) (cdr p)))))
+
+(claim kar
+  (-> (Pair Nat Nat)
+      Nat))
+
+(define kar
+  (lambda (p)
+    (elim-Pair
+      Nat Nat
+      Nat
+      p
+      (lambda (a d)
+        a))))
+
+(kar (cons 1 2))
+
+(claim kdr
+  (-> (Pair Nat Nat)
+      Nat))
+
+(define kdr
+  (lambda (p)
+    (elim-Pair
+      Nat Nat
+      Nat
+      p
+      (lambda (a d)
+        d))))
+
+(kdr (cons 1 2))
+
+(claim swap
+  (-> (Pair Nat Atom)
+      (Pair Atom Nat)))
+
+(define swap
+  (lambda (p)
+    (elim-Pair
+      Nat Atom
+      (Pair Atom Nat)
+      p
+      (lambda (n a)
+        (cons a n)))))
+
+(swap (cons 3 'A))
+
+(claim twin
+  (Pi ((A U))
+    (-> A
+        (Pair A A))))
+
+(define twin
+  (lambda (A)
+    (lambda (x)
+      (cons x x))))
+
+((twin Nat) 3)
