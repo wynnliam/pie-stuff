@@ -1,0 +1,184 @@
+#lang pie
+
+; Liam Wynn, 2/27/2020, Counting Number of Items in List
+
+; In this program, I show how you can define a simple
+; list counting operation in Pie. I actually wrote this
+; out on paper with just some notes I took to help me
+; along.
+
+; It is my hope that this program will be useful in learning
+; how to think with Pie.
+
+; We count lists with rec-List. rec-List requires a List,
+; a base value (what we return in the case of an empty list),
+; and and a step function, which is a function we apply to each list.
+
+; Essentially, rec-List works by recursively traversing the list until
+; we reach nil and then as we come back from each recursive call,
+; apply step to the head of the list and the rest of the body.
+
+; So suppose our list was (1, 2, 3, 4, nil). Then rec-List would
+; compute step (1, step (2, step (3, step (4, step (base))))).
+
+; With all this in mind, let's break down each part of this program.
+
+; First, we define our step function. For rec-List, we need three arguments:
+; 1) The head of our list. 2) The body of the list. 3) An accumulation variable
+; for all all previous step calls. 
+(claim list-Count-Step
+  (-> Atom (List Atom) Nat
+      Nat))
+
+; Since all we want to do is count the number of items in the list, our accumulation
+; variable (which is initialized to be base in rec-List), keeps track of all the values
+; we've counted thus far. So in this case, we simply add 1 to curr.
+(define list-Count-Step
+  (lambda (e es curr)
+    (add1 curr)))
+
+; Now we can define list-Count proper.
+; For now, we will simply do this operation for a list of Atoms. Later, I'll write a program
+; for a list of any type.
+(claim list-Count
+  (-> (List Atom)
+      Nat))
+
+; So list-Count is just calling rec-List with our given list. Our base value is 0, and our step
+; function is list-Count-Step.
+(define list-Count
+  (lambda (es)
+    (rec-List es 0 list-Count-Step)))
+
+; ----- DEMO FOR list-Count -----
+(claim rugbrod
+  (List Atom))
+
+(define rugbrod
+  (:: 'rye-flour
+    (:: 'rye-kernels
+      (:: 'water
+        (:: 'sourdough
+          (:: 'salt nil))))))
+
+(list-Count rugbrod)
+
+; We can step through this with the above example.
+;
+; (list-Count rugbrod)
+;
+; becomes:
+;
+; (rec-List rugbrod 0 list-Count-Step)
+;
+; becomes:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (rec-List (rye-kernels, water, sourdough, salt, nil)
+;         0
+;         list-Count-Step))
+;
+; becomes:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (rec-List (water, sourdough, salt, nil)
+;             0
+;             list-Count-Step)))
+;
+; becomes:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (list-Count-Step water
+;             (sourdough, salt, nil)
+;             (rec-List (sourdough, salt, nil)
+;                 0
+;                 list-Count-Step))))
+;
+; becomes:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (list-Count-Step water
+;             (sourdough, salt, nil)
+;             (list-Count-Step sourdough
+;                 (salt, nil)
+;                 (rec-List (salt, nil)
+;                     0
+;                     list-Count-Step)))))
+;
+; becomes:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (list-Count-Step water
+;             (sourdough, salt, nil)
+;             (list-Count-Step sourdough
+;                 (salt, nil)
+;                 (list-Count-Step salt
+;                     nil
+;                     (rec-List nil, 0 list-Count-Step))))))
+;
+; reduces to:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (list-Count-Step water
+;             (sourdough, salt, nil)
+;             (list-Count-Step sourdough
+;                 (salt, nil)
+;                 (list-Count-Step salt
+;                     nil
+;                     0)))))
+;
+; reduces to:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (list-Count-Step water
+;             (sourdough, salt, nil)
+;             (list-Count-Step sourdough
+;                 (salt, nil)
+;                 (add1 0)))))
+;
+; reduces to:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (list-Count-Step water
+;             (sourdough, salt, nil)
+;             (add1
+;                 (add1 0)))))
+;
+; reduces to:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (list-Count-Step rye-kernels
+;         (water, sourdough, salt, nil)
+;         (add1
+;             (add1
+;                 (add1 0)))))
+;
+; reduces to:
+; (list-Count-Step 'rye-flour
+;     (rye-kernels, water, sourdough, salt, nil)
+;     (add1
+;         (add1
+;             (add1
+;                 (add1 0)))))
+;
+; reduces to:
+; (add1
+;     (add1
+;         (add1
+;             (add1
+;                 (add1 0)))))
+; Which is 5.
