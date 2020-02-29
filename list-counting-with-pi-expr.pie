@@ -1,0 +1,50 @@
+#lang pie
+
+; Liam Wynn, 2/29/2020, List Length with Pie Expressions.
+
+; In this demo, I show how you can define a procedure
+; that will count a the number of items in a list of any type.
+; We do so by introducing Pi expressions into the list-Count
+; procedure (see list-counting.pie for that).
+
+(claim list-Count-Step
+  (Pi ((A U))
+    (-> A (List A) Nat
+        Nat)))
+
+(define list-Count-Step
+  (lambda (A)
+    (lambda (e es curr)
+      (add1 curr))))
+
+(claim list-Length
+  (Pi ((A U))
+    (-> (List A)
+        Nat)))
+
+(define list-Length
+  (lambda (A)
+    (lambda (es)
+      (rec-List es 0 (list-Count-Step A)))))
+
+(claim my-Nat-List
+  (List Nat))
+
+(define my-Nat-List
+  (:: 1
+    (:: 2
+      (:: 3
+        (:: 4 nil)))))
+
+(claim rugbrod
+  (List Atom))
+
+(define rugbrod
+  (:: 'rye-flour
+    (:: 'rye-kernels
+      (:: 'water
+        (:: 'sourdough
+          (:: 'salt nil))))))
+
+((list-Length Nat) my-Nat-List)
+((list-Length Atom) rugbrod)
