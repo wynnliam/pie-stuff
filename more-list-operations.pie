@@ -1,0 +1,110 @@
+#lang pie
+
+; Liam Wynn, 3/28/2020, Pie Learning
+
+; These examples are from The Little Typer. They show how to implement
+; several list operations.
+
+(claim list-A
+  (List Atom))
+
+(define list-A
+  (:: 'a-one
+    (:: 'a-two
+      (:: 'a-three nil))))
+
+(claim list-B
+  (List Atom))
+
+(define list-B
+  (:: 'b-one
+    (:: 'b-two
+      (:: 'b-three nil))))
+
+; APPEND TWO LISTS
+
+(claim append-step
+  (Pi ((A U))
+    (-> A (List A) (List A)
+        (List A))))
+
+(define append-step
+  (lambda (A)
+    (lambda (e es acc-list)
+      (:: e acc-list))))
+
+(claim append
+  (Pi ((A U))
+    (-> (List A) (List A)
+        (List A))))
+
+(define append
+  (lambda (A)
+    (lambda (start end)
+      (rec-List start end (append-step A)))))
+
+; SNOC
+
+; Snoc is the opposite of cons - it adds an item to the end of a list
+
+(claim snoc
+  (Pi ((E U))
+    (-> (List E) E
+        (List E))))
+
+(define snoc
+  (lambda (A)
+    (lambda (start e)
+      (rec-List start
+        (:: e nil)
+        (append-step A)))))
+
+; REVERSE A LIST
+
+(claim reverse-step
+  (Pi ((A U))
+    (-> A (List A) (List A)
+        (List A))))
+
+(define reverse-step
+  (lambda (A)
+    (lambda (a as acc-list)
+      ((snoc A) acc-list a))))
+
+(claim reverse
+  (Pi ((A U))
+    (-> (List A)
+        (List A))))
+
+(define reverse
+  (lambda (A)
+    (lambda (my-list)
+      (rec-List my-list
+        (the (List A) nil)
+        (reverse-step A)))))
+
+; CONCAT TWO LISTS
+
+; Concats list end to list start such that list end is reversed.
+
+(claim concat-step
+  (Pi ((A U))
+    (-> A (List A) (List A)
+        (List A))))
+
+(define concat-step
+  (lambda (A)
+    (lambda (a as acc-list)
+      ((snoc A) acc-list a))))
+
+(claim concat
+  (Pi ((A U))
+    (-> (List A) (List A)
+        (List A))))
+
+(define concat
+  (lambda (A)
+    (lambda (start end)
+      (rec-List end
+        start
+        (concat-step A)))))
