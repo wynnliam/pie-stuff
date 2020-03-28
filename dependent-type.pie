@@ -1,0 +1,59 @@
+#lang pie
+
+; Liam Wynn, 3/28/2020, Pie Learning
+
+; My First Dependent Type!
+
+; In this demo (code from The Little Typer), I explore depdendent types.
+
+; peas' type is DEPENDENT on a natural number how-many-peas. Since how-many-peas
+; is a particular natural number, it is NOT a type unto itself. Thus, the type of
+; peas is dependent on something that is not a type. This is what we call a Dependent Type.
+(claim peas
+  (Pi ((how-many-peas Nat))
+    (Vec Atom how-many-peas)))
+
+; This definition won't work because we use rec-Nat. The incomplete vector
+; at step n - 1 will necessarily have a different type than the complete vector
+; at n. The type at n - 1 is (Vec Atom (n - 1)), but at step n it's (Vec Atom n).
+; We need more powerful machinery to handle this change of types!
+;(define peas
+;  (lambda (how-many-peas)
+;    (rec-Nat how-many-peas
+;      vecnil
+;      (lambda (l-minus-one peas-acc)
+;        (vec:: 'pea peas-acc)))))
+
+; Here we introduce ind-Nat, or Induction on Nat
+
+; ind-Nat uses an additional argument, the motive, to describe
+; how a type depends on a natural number. It can be any (-> Nat U).
+
+; The motive for peas is:
+(claim mot-peas
+  (-> Nat
+      U))
+
+(define mot-peas
+  (lambda (k)
+    (Vec Atom k)))
+
+; The step for peas is:
+
+(claim step-peas
+  (Pi ((n-minus-one Nat))
+    (-> (mot-peas n-minus-one)
+        (mot-peas (add1 n-minus-one)))))
+
+(define step-peas
+  (lambda (n-minus-one)
+    (lambda (peas-minus-one)
+      (vec:: 'pea peas-minus-one))))
+
+; Now we can define peas proper:
+(define peas
+  (lambda (how-many-peas)
+    (ind-Nat how-many-peas
+      mot-peas
+      vecnil
+      step-peas)))
