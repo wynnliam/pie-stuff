@@ -1,0 +1,26 @@
+#lang pie
+
+; Liam Wynn, 3/29/2020, Pie Learning
+
+; Wherein I define rec-Nat in terms of ind-Nat
+
+(claim also-rec-Nat
+  (Pi ((X U))
+    (-> Nat
+        X
+        (-> Nat X
+            X)
+        X)))
+
+; Our motive says "no matter what natural number you supply,
+; you always get back an X". So if target == zero, also-rec-Nat
+; gives back the same X as base. Otherwise it will return the same
+; X as (step (also-rec-Nat (target - 1, base, step)))
+(define also-rec-Nat
+  (lambda (X)
+    (lambda (target base step)
+      (ind-Nat target
+        (lambda (k)
+          X)
+        base
+        step))))

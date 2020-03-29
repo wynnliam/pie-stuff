@@ -1,0 +1,68 @@
+#lang pie
+
+; Liam Wynn, 3/29/2020, Pie Learning
+
+; How to find the last item in a list using
+; dependent types.
+
+; Suppose we have a list of three things: (a, b, c)
+; To get the last one, we want  to apply tail twice,
+; and head once. So basically we apply n - 1 tails and 1 head
+; to a vec to get the last item.
+
+(claim last
+  (Pi ((E U)
+       (l Nat))
+    (-> (Vec E (add1 l))
+        E)))
+
+; base-last is what we apply to the
+; last item in the list. The smallest possible
+; list we can have with something in it has 1 item,
+; hence the type is a (Vec E (add1 zero))
+(claim base-last
+  (Pi ((E U))
+    (-> (Vec E (add1 zero))
+        E)))
+
+(define base-last
+  (lambda (E)
+    (lambda (es)
+      (head es))))
+
+; I believe the mot/step gets applied as we "unravel"
+; from the base case. So as we unravel, our vector size grows
+; back to its original size. Hence, we want the motive to be
+; a (Vec E (add1 k))
+(claim mot-last
+  (-> U Nat
+      U))
+
+(define mot-last
+  (lambda (E k)
+    (-> (Vec E (add1 k))
+        E)))
+
+; step-last turns an almost-answer for l-minus-one
+; to an answer for (add1 l-minus-one).
+
+; In other words: The step transforms a last
+; function for l into a last function for (add1 l)
+(claim step-last
+  (Pi ((E U)
+       (l-minus-one Nat))
+    (-> (mot-last E l-minus-one)
+        (mot-last E (add1 l-minus-one)))))
+
+(define step-last
+  (lambda (E l-minus-one)
+    (lambda (last_l-minus-one)
+      (lambda (es)
+        (last_l-minus-one (tail es))))))
+
+(define last
+  (lambda (E l)
+    (ind-Nat l
+      (mot-last E)
+      (base-last E)
+      (step-last E))))
