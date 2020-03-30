@@ -1,0 +1,76 @@
+#lang pie
+
+; Liam Wynn, 3/30/2020, Pie Learning
+
+; Implements a function drop-last with dependent types.
+; drop-last will drop the last item in a vector.
+; We will implement this by constructing a list with all
+; the items in a given vector without the original.
+
+; What is the type of drop-last? drop-last should be a
+; function that takes a vector with at n things (n > 0)
+; in it, and return a vector with n - 1 things (n >= 0) in it.
+(claim drop-last
+  (Pi ((E U)
+       (l Nat))
+    (-> (Vec E (add1 l))
+        (Vec E l))))
+
+; First we must implement the base case, when the target is zero.
+; In this case, the base type is the mot applied to zero. The TYPE
+; of the base is a function that takes Vec with 1 item and returns
+; a Vec with 0 items.
+(claim base-drop-last
+  (Pi ((E U))
+    (-> (Vec E (add1 zero))
+        (Vec E zero))))
+
+(define base-drop-last
+  (lambda (E)
+    (lambda (es)
+      vecnil)))
+
+; Given a Nat n, we want to construct a Vector with N - 1 items.
+; This is because our vector will decrease in size when the function
+; is applied to it. So mot should be a Pi expression 
+; that defines a function that takes a Vector of (k + 1) items and
+; returns a Vector of k items.
+(claim mot-drop-last
+  (-> U Nat
+      U))
+
+(define mot-drop-last
+  (lambda (E k)
+    (-> (Vec E (add1 k))
+        (Vec E k))))
+
+; The step is the most confusing part. Remember, the step
+; is something that applies as you're unrolling from the base
+; case. So the type is defined by an increasing natural number.
+; Essentially it takes a function Q and returns a function P.
+; Function Q takes a Vector of (n + 1) items and returns a Vector
+; of k items. Function P takes a Vector of ((n + 1) + 1) items and
+; returns a Vector of (n + 1) items. So n is the size of the vector
+; at some step as we are moving away from the base case.
+;
+; In other words, step describes how to take a function defined for k
+; and construct a function defined for k + 1
+(claim step-drop-last
+  (Pi ((E U)
+       (k Nat))
+    (-> (mot-drop-last E k)
+        (mot-drop-last E (add1 k)))))
+
+(define step-drop-last
+  (lambda (E k)
+    (lambda (drop-last_k-minus-1) ; Is a function that works on a Vector of k - 1 item
+      (lambda (es) ; Is a Vector of size k
+        (vec:: (head es) ; The body of the function that works on k items
+          (drop-last_k-minus-1 (tail es)))))))
+
+(define drop-last
+  (lambda (E l)
+    (ind-Nat l
+      (mot-drop-last E)
+      (base-drop-last E)
+      (step-drop-last E))))

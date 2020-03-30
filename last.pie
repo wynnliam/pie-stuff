@@ -16,10 +16,10 @@
     (-> (Vec E (add1 l))
         E)))
 
-; base-last is what we apply to the
-; last item in the list. The smallest possible
-; list we can have with something in it has 1 item,
-; hence the type is a (Vec E (add1 zero))
+
+; base-last is a function applied to a vector
+; with one item. The function should take a vector
+; and return an item
 (claim base-last
   (Pi ((E U))
     (-> (Vec E (add1 zero))
@@ -30,10 +30,10 @@
     (lambda (es)
       (head es))))
 
-; I believe the mot/step gets applied as we "unravel"
-; from the base case. So as we unravel, our vector size grows
-; back to its original size. Hence, we want the motive to be
-; a (Vec E (add1 k))
+; The motive takes a value and returns the type for
+; the inductive part of ind-Nat. So the type should be
+; a function that takes a Nat and returns a Vector of 1 +
+; that Nat.
 (claim mot-last
   (-> U Nat
       U))
@@ -43,11 +43,8 @@
     (-> (Vec E (add1 k))
         E)))
 
-; step-last turns an almost-answer for l-minus-one
-; to an answer for (add1 l-minus-one).
-
-; In other words: The step transforms a last
-; function for l into a last function for (add1 l)
+; step-last will take our almost complete function
+; and add a tail call to it. 
 (claim step-last
   (Pi ((E U)
        (l-minus-one Nat))
