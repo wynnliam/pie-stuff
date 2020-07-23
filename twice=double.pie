@@ -1,0 +1,113 @@
+; Liam Wynn, 7/23/2020, PIE Learning
+
+; In this demo, I create a proof that two ways of doubling
+; a natural number are equivalent.
+
+#lang pie
+
+; First, we need to define addition
+(claim +
+  (-> Nat Nat
+      Nat))
+
+(claim successor
+  (-> Nat
+      Nat))
+
+(define successor
+  (lambda (k)
+    (add1 k)))
+
+(define +
+  (lambda (p q)
+    (iter-Nat p
+      q
+      successor)))
+
+; Next, we will define two ways of doubling a number.
+; The first is called "double", and uses iter-Nat to add 2
+; to some value p. The second uses + as defined above to add
+; a value q to itself.
+
+(claim double
+  (-> Nat
+      Nat))
+
+(define double
+  (lambda (p)
+    (iter-Nat p
+      zero
+      (+ 2))))
+
+(claim twice
+  (-> Nat
+      Nat))
+
+(define twice
+  (lambda (q)
+    (+ q q)))
+
+; (double 3) gives (the Nat 6)
+; (twice 3) gives (the Nat 6)
+; So it should be easy to show that twice and double are the same... right?
+
+(claim twice=double
+  (Pi ((n Nat))
+    (= Nat (twice n) (double n))))
+
+; Here's an attempt. It's wrong because the system says they are not the same
+; Nat.
+; (define twice=double
+;  (lambda (n)
+;    (same (twice n))))
+
+; What's the problem? Well let's see the normal form of twice n
+;    (twice (add1 n))
+; => (+ (add1 n) (add1 n))
+
+; For double n:
+;    (double (add1 n))
+; => (add1 (add1 (double n)))
+
+; The system does not recognize (+ (add1 n) (add1 n)) and (add1 (add1 (double n))) as
+; the same Nat.
+; The thing about add1 and plus is that we can move the first add1 and + around, but
+; not the second add1. In other words, Pie by default knows:
+; (+ (add1 p) (add1 q)) is the same as
+; (add1 (+ p (add1 q))) but does not know that this is the same as:
+; (add1 (add1 (+ p q))). If we can show this, then we can complete our proof!
+
+; Subgoal: Show (+ p (add1 q)) == (add1 (+ p q))
+
+(claim add1+=+add1
+  (Pi ((p Nat)
+       (q Nat))
+    (= Nat
+       (add1 (+ p q))
+       (+ p (add1 q)))))
+
+; For this proof, we will use ind-Nat on p. This will
+; require a motive and step.
+
+(claim motive-add1+=+add1
+  (-> Nat Nat
+      U))
+
+; Given two nats, we can construct the desired type of
+; a current iteration of step.
+(define motive-add1+=+add1
+  (lambda (q p-1)
+    (= Nat
+      (add1 (+ q p-1))
+      (+ q (add1 p-1)))))
+
+(claim step-add1+=+add1
+  (Pi ((q Nat)
+       (p-1 Nat))
+    (-> (motive-add1+=+add1 q p-1)
+        (motive-add1+=+add1 q (add1 p-1)))))
+
+(define step-add1+=+add1
+  (lambda (q p-1)
+    (lambda (add1+=+add1_p-1)
+      (cong add1+=+add1_p-1 (+ 1)))))
