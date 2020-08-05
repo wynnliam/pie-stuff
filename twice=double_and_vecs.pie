@@ -1,0 +1,314 @@
+#lang pie
+
+; Liam Wynn, 7/23/2020, PIE Learning
+
+; In this demo, I create a proof that two ways of doubling
+; a natural number are equivalent.
+
+; First, we need to define addition
+(claim +
+  (-> Nat Nat
+      Nat))
+
+(claim successor
+  (-> Nat
+      Nat))
+
+(define successor
+  (lambda (k)
+    (add1 k)))
+
+(define +
+  (lambda (p q)
+    (iter-Nat p
+      q
+      successor)))
+
+; Next, we will define two ways of doubling a number.
+; The first is called "double", and uses iter-Nat to add 2
+; to some value p. The second uses + as defined above to add
+; a value q to itself.
+
+(claim double
+  (-> Nat
+      Nat))
+
+(define double
+  (lambda (p)
+    (iter-Nat p
+      zero
+      (+ 2))))
+
+(claim twice
+  (-> Nat
+      Nat))
+
+(define twice
+  (lambda (q)
+    (+ q q)))
+
+; (double 3) gives (the Nat 6)
+; (twice 3) gives (the Nat 6)
+; So it should be easy to show that twice and double are the same... right?
+
+(claim twice=double
+  (Pi ((n Nat))
+    (= Nat (twice n) (double n))))
+
+; Here's an attempt. It's wrong because the system says they are not the same
+; Nat.
+; (define twice=double
+;  (lambda (n)
+;    (same (twice n))))
+
+; What's the problem? Well let's see the normal form of twice n
+;    (twice (add1 n))
+; => (+ (add1 n) (add1 n))
+
+; For double n:
+;    (double (add1 n))
+; => (add1 (add1 (double n)))
+
+; The system does not recognize (+ (add1 n) (add1 n)) and (add1 (add1 (double n))) as
+; the same Nat.
+; The thing about add1 and plus is that we can move the first add1 and + around, but
+; not the second add1. In other words, Pie by default knows:
+; (+ (add1 p) (add1 q)) is the same as
+; (add1 (+ p (add1 q))) but does not know that this is the same as:
+; (add1 (add1 (+ p q))). If we can show this, then we can complete our proof!
+
+; Subgoal: Show (+ p (add1 q)) == (add1 (+ p q))
+
+(claim add1+=+add1
+  (Pi ((p Nat)
+       (q Nat))
+    (= Nat
+       (add1 (+ p q))
+       (+ p (add1 q)))))
+
+; For this proof, we will use ind-Nat on p. This will
+; require a motive and step.
+
+(claim motive-add1+=+add1
+  (-> Nat Nat
+      U))
+
+; Given two nats, we can construct the desired type of
+; a current iteration of step.
+(define motive-add1+=+add1
+  (lambda (p-1 q)
+    (= Nat
+      (add1 (+ q p-1))
+      (+ q (add1 p-1)))))
+
+(claim step-add1+=+add1
+  (Pi ((q Nat)
+       (p-1 Nat))
+    (-> (motive-add1+=+add1 q p-1)
+        (motive-add1+=+add1 q (add1 p-1)))))
+
+(define step-add1+=+add1
+  (lambda (q p-1)
+    (lambda (add1+=+add1_p-1)
+      (cong add1+=+add1_p-1 (+ 1)))))
+
+; Now we're ready to define add1+=+add1
+(define add1+=+add1
+  (lambda (p q)
+    (ind-Nat p
+      (motive-add1+=+add1 q)
+      (same (add1 q))
+      (step-add1+=+add1 q))))
+
+; Okay we're now ready to tackle twice=double.
+; For this, we will use a ind-Nat again, so we will need a motive
+; and step as well.
+
+(claim motive-twice=double
+  (-> Nat
+      U))
+
+; So far so good. We show how we can create
+; a type expressing equality of twice k and double
+; k from a natural number k.
+(define motive-twice=double
+  (lambda (k)
+    (= Nat
+      (twice k)
+      (double k))))
+
+; Okay the step gets hair because we will use replace. Because
+; of this, we need a base and motive. I will show you why.
+
+(claim step-twice=double
+  (Pi ((n-1 Nat))
+    (-> (motive-twice=double n-1)
+        (motive-twice=double (add1 n-1)))))
+
+; So we are saying "for all natural numbers n-1, if I've got a proof
+; that (twice n-1) == (double n-1), then I can give you a proof of
+; (twice (add1 n-1)) == (double (add1 n-1)). It seems like an easy
+; job for cong, right?
+
+; (define step-twice=double
+;   (lambda (n-1)
+;     (lambda (twice=double_n-1)
+;       (cong twice=double_n-1 (+ 2)))))
+
+; This gives an error. This will wrap both parts of (= Nat (twice n-1) (double n-1))
+; in two add1's. This would look like:
+
+; (= Nat
+;   (add1 (add1 (+ n-1 n-1)))
+;   (add1 (add1 (double n-1))))
+;
+; If we can replace (+ n-1 n-1) with (+ n-1 (add1 n-1)), then that
+; would do the trick.
+
+; For this, we will use replace.
+
+; Recall:
+
+; (add1+=+add1 n-1 n-1) is an
+; (= Nat
+;   (add1 (+ n-1 n-1))
+;   (+ n-1 (add1 n-1)))
+
+; And our goal is to replace a:
+; (add1 (+ n-1 n-1)) with
+; (+ n-1 (add1 n-1))
+
+; In an expression that looks like:
+; (add1 (add1 (+ n-1 n-1)))
+
+; Using these things, we can construct an appropriate replace statement:
+
+(claim mot-step-twice=double
+  (-> Nat Nat
+      U))
+
+(define mot-step-twice=double
+  (lambda (n-1 k)
+    (= Nat
+      (add1 k)
+      (add1
+        (add1 (double n-1))))))
+
+(define step-twice=double
+  (lambda (n-1)
+    (lambda (twice=double_n-1)
+      (replace (add1+=+add1 n-1 n-1)
+        (mot-step-twice=double n-1)
+        (cong twice=double_n-1 (+ 2))))))
+
+; Now we can finally finish our proof of twice=double
+(define twice=double
+  (lambda (n)
+    (ind-Nat n
+      motive-twice=double
+      (same zero)
+      step-twice=double)))
+
+; I hope the above demonstrates some nefarious issues when showing how two
+; statements are equivalent in computers.
+
+; Next, we will use the elaborate proof to construct a function that doubles
+; the size of a vector by adding a duplicate of each thing in it.
+
+(claim double-Vec
+  (Pi ((E U)
+       (l Nat))
+    (-> (Vec E l)
+        (Vec E (double l)))))
+
+; We will use ind-Nat for this operation
+
+; (define double-Vec
+;   (lambda (E l)
+;     (ind-Nat l
+;      (mot-double-Vec E)
+;      (base-double-Vec E)
+;      (step-double-Vec E))))
+
+; Let us now define the individual components.
+; The easiest is always the base case. Conceptually,
+; if I double zero, I get zero. As such, our base should
+; take an empty vector and return that.
+
+(claim base-double-Vec
+  (Pi ((E U))
+    (-> (Vec E zero)
+        (Vec E (double zero)))))
+
+(define base-double-Vec
+  (lambda (E)
+    (lambda (empty-vec)
+      vecnil)))
+
+; Next, we will describe the motive. The motive
+; will describe how to get the type from one vec
+; to another (that is, how to get a type Vec E (double n)
+; from a type Vec E n.
+
+(claim mot-double-Vec
+  (-> U Nat
+      U))
+
+(define mot-double-Vec
+  (lambda (E k)
+    (-> (Vec E k)
+        (Vec E (double k)))))
+
+; Lastly, we need to define the step. Recall that this
+; will take an actual Vec E (double n) and creates a Vec E (double (add1 n))
+
+(claim step-double-Vec
+  (Pi ((E U)
+       (l-1 Nat))
+    (-> (-> (Vec E l-1)
+            (Vec E (double l-1)))
+        (-> (Vec E (add1 l-1))
+            (Vec E
+              (double (add1 l-1)))))))
+
+(define step-double-Vec
+  (lambda (E l-1)
+    (lambda (doubler-for-vec-l-1)
+      (lambda (es)
+        (vec:: (head es)
+          (vec:: (head es)
+            (doubler-for-vec-l-1 (tail es))))))))
+
+(define double-Vec
+  (lambda (E l)
+    (ind-Nat l
+      (mot-double-Vec E)
+      (base-double-Vec E)
+      (step-double-Vec E))))
+
+; Now we will use symm to define twice-Vec
+(claim twice-Vec
+  (Pi ((E U)
+       (l Nat))
+    (-> (Vec E l)
+        (Vec E (twice l)))))
+
+(define twice-Vec
+  (lambda (E l)
+    (lambda (es)
+      (replace (symm (twice=double l))
+        (lambda (k)
+          (Vec E k))
+        (double-Vec E l es)))))
+
+(claim cookies
+  (Vec Atom 3))
+
+(define cookies
+  (vec:: 'chocolate-chip
+    (vec:: 'peanut-butter
+      (vec:: 'oatmeal
+        vecnil))))
+
+((double-Vec Atom 3) cookies)
+((twice-Vec Atom 3) cookies)
